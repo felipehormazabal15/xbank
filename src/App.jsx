@@ -1,56 +1,151 @@
-import { useState } from "react";
-import { loginUser, registerUser } from "./services/auth";
-import Dashboard from "./pages/Dashboard";
+import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase/firebase";
+import { loginUser, registerUser } from "./services/auth";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
 
-  onAuthStateChanged(auth, (u) => {
-    setUser(u);
-  });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleRegister = async () => {
-    await registerUser(email, password);
+    try {
+      await registerUser(email, password);
+
+      alert("Usuario registrado correctamente.");
+
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   const handleLogin = async () => {
-    await loginUser(email, password);
+    try {
+      await loginUser(email, password);
+
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
-  if (user) return <Dashboard />;
+  if (loading) {
+    return (
+      <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+        Cargando...
+      </h2>
+    );
+  }
+
+  if (user) {
+    return <Dashboard />;
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>XBank</h1>
+    <div
+      style={{
+        backgroundColor: "#0f172a",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "#1e293b",
+          padding: "40px",
+          borderRadius: "15px",
+          width: "350px",
+          color: "white",
+          boxShadow: "0 0 20px rgba(0,0,0,.3)",
+        }}
+      >
+        <h1 style={{ textAlign: "center" }}>🏦 XBank</h1>
 
-      <input
-        placeholder="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <p style={{ textAlign: "center", color: "#cbd5e1" }}>
+          Mi Banco Digital
+        </p>
 
-      <br /><br />
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginTop: "20px",
+            borderRadius: "8px",
+            border: "none",
+            boxSizing: "border-box",
+          }}
+        />
 
-      <input
-        placeholder="password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginTop: "15px",
+            borderRadius: "8px",
+            border: "none",
+            boxSizing: "border-box",
+          }}
+        />
 
-      <br /><br />
+        <button
+          onClick={handleLogin}
+          style={{
+            width: "100%",
+            marginTop: "20px",
+            padding: "12px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
+          Iniciar sesión
+        </button>
 
-      <button onClick={handleRegister}>
-        Registrarse
-      </button>
-
-      <button onClick={handleLogin}>
-        Iniciar sesión
-      </button>
+        <button
+          onClick={handleRegister}
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            padding: "12px",
+            backgroundColor: "#16a34a",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
+          Registrarse
+        </button>
+      </div>
     </div>
   );
 }

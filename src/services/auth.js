@@ -1,24 +1,55 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
 import { auth, db } from "../firebase/firebase";
 
-// REGISTRO
+// ===============================
+// REGISTRAR USUARIO
+// ===============================
 export const registerUser = async (email, password) => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-  const user = userCredential.user;
+    const user = userCredential.user;
 
-  await setDoc(doc(db, "users", user.uid), {
-    email: user.email,
-    saldo: 100000,
-    createdAt: new Date()
-  });
+    // Crear documento del usuario en Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      saldo: 100000,
+      createdAt: serverTimestamp(),
+    });
 
-  return user;
+    return user;
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };
 
-// LOGIN
+// ===============================
+// INICIAR SESIÓN
+// ===============================
 export const loginUser = async (email, password) => {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+  try {
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    return userCredential.user;
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };

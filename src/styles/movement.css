@@ -1,0 +1,60 @@
+.movement-card{
+    margin-top:30px;
+    background:white;
+    border-radius:20px;
+    padding:25px;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);
+}
+
+.movement-card h2{
+    margin-bottom:20px;
+    color:#1E3A8A;
+}
+
+.movement-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    padding:18px;
+    border-radius:15px;
+    margin-bottom:15px;
+    background:#F8FAFC;
+    transition:.3s;
+}
+
+.movement-item:hover{
+    background:#EEF2FF;
+}
+
+.movement-icon{
+    width:50px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.movement-info{
+    flex:1;
+}
+
+.movement-info strong{
+    display:block;
+    color:#111827;
+    margin-bottom:10px;
+}
+
+.movement-info p{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#64748B;
+    font-size:14px;
+    margin:4px 0;
+}
+
+.movement-amount{
+    font-size:20px;
+    font-weight:bold;
+    color:#2563EB;
+}

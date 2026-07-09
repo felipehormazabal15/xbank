@@ -1,110 +1,178 @@
 import { useEffect, useState } from "react";
-import { auth, db } from "../firebase/firebase";
-import { doc, onSnapshot, collection, query } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import {
+  doc,
+  onSnapshot,
+  collection,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+
+import { auth, db } from "../firebase/firebase";
+import { transferMoney } from "../services/transfer";
+
+import Header from "../components/Header";
+import StatsCards from "../components/StatsCards";
+import BalanceCard from "../components/BalanceCard";
+import TransferForm from "../components/TransferForm";
+import MovementList from "../components/MovementList";
+
+import "../styles/header.css";
+import "../styles/card.css";
+import "../styles/form.css";
+import "../styles/movement.css";
+import "../styles/dashboard.css";
+import "../styles/stats.css";
 
 function Dashboard() {
   const [userData, setUserData] = useState(null);
 
-  const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState("");
+  const [emailDestino, setEmailDestino] = useState("");
+  const [monto, setMonto] = useState("");
+
   const [movimientos, setMovimientos] = useState([]);
 
-  // USUARIO EN TIEMPO REAL
+  const [loadingTransfer, setLoadingTransfer] = useState(false);
+
+  // Obtener datos del usuario
   useEffect(() => {
     const user = auth.currentUser;
+
     if (!user) return;
 
-    const userRef = doc(db, "users", user.uid);
-
-    const unsubscribe = onSnapshot(userRef, (snap) => {
-      if (snap.exists()) setUserData(snap.data());
-    });
+    const unsubscribe = onSnapshot(
+      doc(db, "users", user.uid),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setUserData(snapshot.data());
+        }
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
-  // MOVIMIENTOS
+  // Obtener historial
   useEffect(() => {
-    const q = query(collection(db, "movimientos"));
+    const user = auth.currentUser;
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(doc => doc.data());
-      setMovimientos(data);
+    if (!user) return;
+
+    const q = query(
+      collection(db, "movimientos"),
+      where("from", "==", user.uid),
+      orderBy("date", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lista = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setMovimientos(lista);
     });
 
     return () => unsubscribe();
   }, []);
 
   const handleTransfer = async () => {
+    if (loadingTransfer) return;
+
+    const montoNumero = Number(monto);
+
+    if (emailDestino.trim() === "") {
+      alert("Debes ingresar el correo del destinatario.");
+      return;
+    }
+
+    if (monto === "") {
+      alert("Debes ingresar un monto.");
+      return;
+    }
+
+    if (isNaN(montoNumero)) {
+      alert("Monto inválido.");
+      return;
+    }
+
+    if (montoNumero <= 0) {
+      alert("El monto debe ser mayor que cero.");
+      return;
+    }
+
+    if (emailDestino === userData.email) {
+      alert("No puedes transferirte dinero a ti mismo.");
+      return;
+    }
+
+    if (montoNumero > userData.saldo) {
+      alert("Saldo insuficiente.");
+      return;
+    }
+
     try {
-      const { transferMoney } = await import("../services/transfer");
+      setLoadingTransfer(true);
 
-      await transferMoney(auth.currentUser.uid, email, amount);
+      await transferMoney(
+        auth.currentUser.uid,
+        emailDestino,
+        montoNumero
+      );
 
-      alert("Transferencia exitosa 💸");
+      alert("✅ Transferencia realizada correctamente.");
 
-      setEmail("");
-      setAmount("");
-    } catch (e) {
-      alert(e.message);
+      setEmailDestino("");
+      setMonto("");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoadingTransfer(false);
     }
   };
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.reload();
   };
 
-  if (!userData) return <h2>Cargando...</h2>;
+  if (!userData) {
+    return <h2 className="loading">Cargando...</h2>;
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🏦 XBank</h1>
+    <div className="dashboard">
 
-      <h2>Bienvenido: {userData.email}</h2>
-      <h2>💰 Saldo: ${userData.saldo}</h2>
+      <Header email={userData.email} />
 
-      <hr />
-
-      <h3>Transferir dinero</h3>
-
-      <input
-        placeholder="Email destino"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+      <StatsCards
+        saldo={userData.saldo}
+        movimientos={movimientos}
       />
 
-      <br /><br />
-
-      <input
-        placeholder="Monto"
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
+      <BalanceCard
+        email={userData.email}
+        saldo={userData.saldo}
       />
 
-      <br /><br />
+      <TransferForm
+        emailDestino={emailDestino}
+        setEmailDestino={setEmailDestino}
+        monto={monto}
+        setMonto={setMonto}
+        handleTransfer={handleTransfer}
+        loadingTransfer={loadingTransfer}
+      />
 
-      <button onClick={handleTransfer}>
-        Enviar dinero
-      </button>
+      <MovementList movimientos={movimientos} />
 
-      <hr />
-
-      <h3>📜 Movimientos</h3>
-
-      {movimientos.map((m, i) => (
-        <div key={i}>
-          <p>${m.amount} - {m.type}</p>
-        </div>
-      ))}
-
-      <br />
-
-      <button onClick={handleLogout}>
+      <button
+        className="logout-btn"
+        onClick={handleLogout}
+      >
         Cerrar sesión
       </button>
+
     </div>
   );
 }

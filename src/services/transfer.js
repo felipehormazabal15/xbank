@@ -7,49 +7,81 @@ import {
   where,
   getDocs,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 
 import { db } from "../firebase/firebase";
 
-// TRANSFERENCIA
+// =====================================
+// TRANSFERIR DINERO ENTRE USUARIOS
+// =====================================
 export const transferMoney = async (fromUid, toEmail, amount) => {
   amount = Number(amount);
 
-  if (amount <= 0) throw new Error("Monto inválido");
+  if (isNaN(amount) || amount <= 0) {
+    throw new Error("Ingrese un monto válido.");
+  }
 
+  // Documento del usuario que envía
   const fromRef = doc(db, "users", fromUid);
-  const fromSnap = await getDoc(fromRef);
 
-  if (!fromSnap.exists()) throw new Error("Usuario no existe");
+  // Buscar usuario destino por email
+  const usersRef = collection(db, "users");
 
-  const fromData = fromSnap.data();
+  const q = query(usersRef, where("email", "==", toEmail));
 
-  if (fromData.saldo < amount) throw new Error("Saldo insuficiente");
-
-  const q = query(collection(db, "users"), where("email", "==", toEmail));
   const querySnapshot = await getDocs(q);
 
-  if (querySnapshot.empty) throw new Error("Usuario destino no existe");
+  if (querySnapshot.empty) {
+    throw new Error("El usuario destino no existe.");
+  }
 
   const toDoc = querySnapshot.docs[0];
-  const toUid = toDoc.id;
-  const toData = toDoc.data();
+  const toRef = doc(db, "users", toDoc.id);
 
-  await updateDoc(doc(db, "users", fromUid), {
-    saldo: fromData.saldo - amount
+  // Evitar enviarse dinero a sí mismo
+  if (toDoc.id === fromUid) {
+    throw new Error("No puedes transferirte dinero a ti mismo.");
+  }
+
+  // Transacción para actualizar ambos saldos
+  await runTransaction(db, async (transaction) => {
+    const fromSnap = await transaction.get(fromRef);
+    const toSnap = await transaction.get(toRef);
+
+    if (!fromSnap.exists()) {
+      throw new Error("Usuario emisor no encontrado.");
+    }
+
+    if (!toSnap.exists()) {
+      throw new Error("Usuario destino no encontrado.");
+    }
+
+    const fromData = fromSnap.data();
+    const toData = toSnap.data();
+
+    if (fromData.saldo < amount) {
+      throw new Error("Saldo insuficiente.");
+    }
+
+    transaction.update(fromRef, {
+      saldo: fromData.saldo - amount,
+    });
+
+    transaction.update(toRef, {
+      saldo: toData.saldo + amount,
+    });
   });
 
-  await updateDoc(doc(db, "users", toUid), {
-    saldo: toData.saldo + amount
-  });
-
+  // Guardar movimiento
   await addDoc(collection(db, "movimientos"), {
     from: fromUid,
-    to: toUid,
-    amount,
-    type: "transfer",
-    date: serverTimestamp()
+    to: toDoc.id,
+    toEmail: toEmail,
+    amount: amount,
+    type: "Transferencia",
+    date: serverTimestamp(),
   });
 
   return true;
