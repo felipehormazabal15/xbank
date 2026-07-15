@@ -159,7 +159,7 @@ Todo el código fue revisado, probado y adaptado antes de incorporarlo al proyec
 
 # Autor
 
-Felipe Espinoza
+Felipe Hormazabal
 
 Evaluación 3 — Desarrollo Frontend
 
