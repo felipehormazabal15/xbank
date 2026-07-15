@@ -4,21 +4,30 @@ function TransferForm({
   monto,
   setMonto,
   handleTransfer,
-  loadingTransfer
+  loadingTransfer,
 }) {
   return (
     <div className="transfer-card">
-
       <h2>💸 Nueva transferencia</h2>
 
+      <label htmlFor="emailDestino">
+        Correo del destinatario
+      </label>
+
       <input
+        id="emailDestino"
         type="email"
         placeholder="Correo del destinatario"
         value={emailDestino}
         onChange={(e) => setEmailDestino(e.target.value)}
       />
 
+      <label htmlFor="monto">
+        Monto
+      </label>
+
       <input
+        id="monto"
         type="number"
         placeholder="Monto"
         value={monto}
@@ -31,7 +40,6 @@ function TransferForm({
       >
         {loadingTransfer ? "Enviando..." : "Enviar dinero"}
       </button>
-
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase/firebase";
 import { loginUser, registerUser } from "./services/auth";
 import Dashboard from "./pages/Dashboard";
+import LoginForm from "./components/LoginForm";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -57,96 +58,14 @@ function App() {
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0f172a",
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1e293b",
-          padding: "40px",
-          borderRadius: "15px",
-          width: "350px",
-          color: "white",
-          boxShadow: "0 0 20px rgba(0,0,0,.3)",
-        }}
-      >
-        <h1 style={{ textAlign: "center" }}>🏦 XBank</h1>
-
-        <p style={{ textAlign: "center", color: "#cbd5e1" }}>
-          Mi Banco Digital
-        </p>
-
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "12px",
-            marginTop: "20px",
-            borderRadius: "8px",
-            border: "none",
-            boxSizing: "border-box",
-          }}
-        />
-
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "12px",
-            marginTop: "15px",
-            borderRadius: "8px",
-            border: "none",
-            boxSizing: "border-box",
-          }}
-        />
-
-        <button
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            marginTop: "20px",
-            padding: "12px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
-          Iniciar sesión
-        </button>
-
-        <button
-          onClick={handleRegister}
-          style={{
-            width: "100%",
-            marginTop: "10px",
-            padding: "12px",
-            backgroundColor: "#16a34a",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
-          Registrarse
-        </button>
-      </div>
-    </div>
+    <LoginForm
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      handleLogin={handleLogin}
+      handleRegister={handleRegister}
+    />
   );
 }
 

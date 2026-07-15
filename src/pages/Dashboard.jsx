@@ -11,6 +11,7 @@ import {
 
 import { auth, db } from "../firebase/firebase";
 import { transferMoney } from "../services/transfer";
+import { validarTransferencia } from "../utils/validaciones";
 
 import Header from "../components/Header";
 import StatsCards from "../components/StatsCards";
@@ -80,37 +81,19 @@ function Dashboard() {
   const handleTransfer = async () => {
     if (loadingTransfer) return;
 
+    const error = validarTransferencia({
+      emailDestino,
+      emailOrigen: userData.email,
+      monto,
+      saldo: userData.saldo,
+    });
+
+    if (error) {
+      alert(error);
+      return;
+    }
+
     const montoNumero = Number(monto);
-
-    if (emailDestino.trim() === "") {
-      alert("Debes ingresar el correo del destinatario.");
-      return;
-    }
-
-    if (monto === "") {
-      alert("Debes ingresar un monto.");
-      return;
-    }
-
-    if (isNaN(montoNumero)) {
-      alert("Monto inválido.");
-      return;
-    }
-
-    if (montoNumero <= 0) {
-      alert("El monto debe ser mayor que cero.");
-      return;
-    }
-
-    if (emailDestino === userData.email) {
-      alert("No puedes transferirte dinero a ti mismo.");
-      return;
-    }
-
-    if (montoNumero > userData.saldo) {
-      alert("Saldo insuficiente.");
-      return;
-    }
 
     try {
       setLoadingTransfer(true);
@@ -142,7 +125,6 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-
       <Header email={userData.email} />
 
       <StatsCards
@@ -172,7 +154,6 @@ function Dashboard() {
       >
         Cerrar sesión
       </button>
-
     </div>
   );
 }
